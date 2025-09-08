@@ -94,54 +94,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         showLoadingIndicator(true);
 
-        const filePaths = [
-            './206609967_playlist.m3u',
-            '/206609967_playlist.m3u',
-            './206609967_playlist.M3U'
-        ];
-        const fallbackUrl = 'http://cdnnekotv.sbs/get.php?username=206609967&password=860883584&type=m3u_plus&output=m3u8';
+        // Convert Google Drive view link to direct download link
+        const googleDriveViewUrl = 'https://drive.google.com/file/d/1XxLcwjd8duGFfbt_VYkLichOurDzinqc/view?usp=sharing';
+        const fileId = googleDriveViewUrl.match(/\/d\/(.+?)\/view/)[1];
+        const directDownloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
 
         let content = null;
         let loadedFrom = '';
 
-        for (const filePath of filePaths) {
-            try {
-                const fetchStart = performance.now();
-                const response = await fetch(filePath, {
-                    headers: { 'Accept': 'text/plain,*/*' }
-                });
-                if (response.ok) {
-                    content = await response.text();
-                    loadedFrom = filePath;
-                    console.log(`Carregado de ${filePath} em ${performance.now() - fetchStart} ms`);
-                    break;
+        try {
+            const fetchStart = performance.now();
+            const response = await fetch(directDownloadUrl, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0',
+                    'Accept': 'text/plain,*/*'
                 }
-            } catch (error) {
-                console.error(`Falha ao carregar ${filePath}:`, error.message);
+            });
+            if (response.ok) {
+                content = await response.text();
+                loadedFrom = directDownloadUrl;
+                console.log(`Carregado de Google Drive URL em ${performance.now() - fetchStart} ms`);
+            } else {
+                console.error(`Falha ao carregar de ${directDownloadUrl}: Status ${response.status}`);
             }
-        }
-
-        if (!content) {
-            try {
-                const fetchStart = performance.now();
-                const response = await fetch(fallbackUrl, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0',
-                        'Accept': 'text/plain,*/*',
-                        'Referer': 'http://localhost'
-                    }
-                });
-                if (response.ok) {
-                    content = await response.text();
-                    loadedFrom = fallbackUrl;
-                    console.log(`Carregado de fallback URL em ${performance.now() - fetchStart} ms`);
-                }
-            } catch (error) {
-                console.error(`Falha ao carregar fallback URL:`, error.message);
-                alert(`Erro ao carregar a lista M3U`);
-                showLoadingIndicator(false);
-                return;
-            }
+        } catch (error) {
+            console.error(`Erro ao carregar M3U do Google Drive:`, error.message);
+            alert(`Erro ao carregar a lista M3U do Google Drive`);
+            showLoadingIndicator(false);
+            return;
         }
 
         if (content) {
