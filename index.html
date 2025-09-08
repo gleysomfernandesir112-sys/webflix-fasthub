@@ -1,269 +1,937 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FastFlix</title>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/css/style.css">
-  <style>
-    body { visibility: hidden; }
-
-    .navbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 15px;
-      background: #141414;
-      color: white;
-      position: relative;
-    }
-
-    .logo {
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-
-    .hamburger {
-      display: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-
-    .profile-section-desktop {
-      display: flex;
-      align-items: center;
-    }
-
-    .profile-dropdown {
-      position: relative;
-    }
-
-    .profile-info {
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      padding: 5px 10px;
-    }
-
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: #221f1f;
-      border: 1px solid #333;
-      border-radius: 4px;
-      padding: 10px;
-      min-width: 200px;
-      z-index: 1000;
-      right: 0;
-      top: 100%;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    }
-
-    .dropdown-content a {
-      display: flex;
-      align-items: center;
-      text-decoration: none;
-      color: #fff;
-      padding: 8px 12px;
-    }
-
-    .dropdown-content a:hover {
-      background-color: #333;
-    }
-
-    /* Responsividade */
-    @media (max-width: 768px) {
-    .hamburger {
-        display: block;
-    }
-    .logo {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-    .profile-section-desktop {
-        position: absolute;
-        right: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-    }
-
-    /* Ocultar user-name no mobile */
-    #user-name {
-        display: none;
-    }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastFlix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="./favicon.ico">
+    <!-- Para produção, substitua o CDN do Tailwind por <link href="./css/style.css" rel="stylesheet"> após build local. -->
+    <!-- Certifique-se de que images/PROFILE_ICONS/Default.png e favicon.ico estão no repositório. -->
 </head>
-<body class="player-page">
-  <div id="progress-container" style="display: none;">
-    <p id="progress-text" class="text-gray-400">Carregando lista de canais...</p>
-    <div id="progress-bar">
-      <div id="progress"></div>
-    </div>
-  </div>
-
-  <!-- Navbar -->
-  <div class="navbar" id="main-nav">
-    <!-- Hambúrguer (esquerda mobile) -->
-    <i class="fas fa-bars hamburger" onclick="toggleMenu()"></i>
-
-    <!-- Logo (centro mobile, esquerda desktop) -->
-    <div class="logo">FastFlix</div>
-
-    <!-- Links -->
-    <div class="nav-links" id="nav-links">
-      <a href="#" onclick="switchTab('filmes')" id="filmes-tab" class="active">Filmes</a>
-      <a href="#" onclick="switchTab('series')" id="series-tab">Séries</a>
-      <a href="#" onclick="switchTab('tv')" id="tv-tab">TV ao Vivo</a>
-      <!-- Botões mobile -->
+<body class="bg-gray-900 text-white">
+    <div id="loading" class="fixed inset-0 bg-gray-900 flex items-center justify-center z-50" style="display: none;">
+        <p class="text-xl">Carregando lista de canais...</p>
     </div>
 
-    <!-- Perfil (direita sempre) -->
-    <div class="profile-section-desktop">
-      <div class="profile-dropdown">
-        <div class="profile-info" onclick="toggleDropdown(event)">
-          <img id="profile-icon-display" src="/images/PROFILE_ICONS/Default.png" alt="Perfil" class="w-8 h-8 rounded-full">
-          <span id="user-name"></span>
-          <i class="fas fa-caret-down"></i>
+    <!-- Navbar -->
+    <nav class="bg-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">FastFlix</h1>
+            <div class="nav-links flex space-x-4">
+                <a href="#" id="filmes-tab" class="tab-link active">Filmes</a>
+                <a href="#" id="series-tab" class="tab-link">Séries</a>
+                <a href="#" id="tv-tab" class="tab-link">TV ao Vivo</a>
+            </div>
+            <div class="relative">
+                <button id="profile-button" class="flex items-center space-x-2" onclick="toggleDropdown()">
+                    <img id="profile-icon-display" src="./images/PROFILE_ICONS/Default.png" alt="Profile" class="w-8 h-8 rounded-full">
+                    <span id="user-name">Usuário</span>
+                </button>
+                <div id="profile-dropdown" class="profile-dropdown absolute right-0 mt-2 w-48 bg-gray-700 rounded-md hidden">
+                    <a href="profile.html" class="block px-4 py-2 hover:bg-gray-600">Personalizar Perfil</a>
+                    <button id="logout-button" class="block w-full text-left px-4 py-2 hover:bg-gray-600">Desconectar</button>
+                </div>
+            </div>
         </div>
-        <div class="dropdown-content" id="dropdown-content">
-          <a href="profile.html" id="profile-button-desktop"><i class="fas fa-user-edit"></i> Personalizar Perfil</a>
-          <a href="#" id="logout-button"><i class="fas fa-sign-out-alt"></i> Desconectar</a>
+    </nav>
+
+    <!-- Search and Category Filter -->
+    <div class="container mx-auto p-4">
+        <input type="text" id="search" placeholder="Buscar..." class="w-full p-2 mb-4 bg-gray-700 rounded">
+        <select id="category-filter" class="w-full p-2 mb-4 bg-gray-700 rounded">
+            <option value="all">Todas as Categorias</option>
+        </select>
+    </div>
+
+    <!-- Tabs Content -->
+    <div class="container mx-auto p-4">
+        <div id="filmes" class="category active grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+        <div id="series" class="category hidden grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+        <div id="tv" class="category hidden grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+    </div>
+
+    <!-- Pagination for each tab -->
+    <div class="container mx-auto p-4">
+        <div id="filmes-pagination" class="pagination mb-4"></div>
+        <div id="series-pagination" class="pagination hidden mb-4"></div>
+        <div id="tv-pagination" class="pagination hidden mb-4"></div>
+    </div>
+
+    <!-- Series Modal -->
+    <div id="series-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-gray-800 p-6 rounded-md max-w-md w-full max-h-screen overflow-y-auto">
+            <h2 id="modal-title" class="text-xl mb-4">Série</h2>
+            <div id="season-selector" class="mb-4"></div>
+            <div id="modal-episodes" class="space-y-2"></div>
+            <button onclick="closeModal()" class="mt-4 px-4 py-2 bg-red-600 rounded">Fechar</button>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Conteúdo principal -->
-  <div class="max-w-6xl mx-auto p-4">
-    <input type="text" id="search" placeholder="Buscar..." class="w-full p-3 bg-gray-800 text-white border-none rounded-md mb-6 focus:outline-none" oninput="filterItems()">
-
-    <div id="filters" class="flex gap-4 mb-6">
-      <select id="category-filter" class="bg-gray-800 text-white p-2 rounded-md focus:outline-none">
-        <option value="">Todas as Categorias</option>
-      </select>
-      
     </div>
 
-    <div id="categories">
-      <div class="category active" id="filmes-category">
-        <h2>Filmes</h2>
-        <div id="filmes" class="channel-list"></div>
-        <div id="filmes-pagination" class="pagination flex justify-center gap-2 mt-4"></div>
-      </div>
-      <div class="category" id="series-category">
-        <h2>Séries</h2>
-        <div id="series" class="channel-list"></div>
-        <div id="series-pagination" class="pagination flex justify-center gap-2 mt-4"></div>
-      </div>
-      <div class="category" id="tv-category">
-        <h2>TV ao Vivo</h2>
-        <div id="tv" class="channel-list"></div>
-        <div id="tv-pagination" class="pagination flex justify-center gap-2 mt-4"></div>
-      </div>
+    <!-- Expired Account Message -->
+    <div id="expired-message" class="hidden text-center p-8">
+        <h1 class="text-2xl mb-4">Sua conta está expirada!</h1>
+        <p>Renove sua conta para continuar usando nossos serviços.</p>
     </div>
-  </div>
 
-  <!-- Modal de Séries -->
-  <div id="series-modal" class="modal">
-    <div class="modal-content">
-      <h2 id="modal-title" class="text-2xl font-bold mb-4"></h2>
-      <div id="season-selector" class="mb-4"></div>
-      <div id="modal-episodes" class="max-h-80 overflow-y-auto"></div>
-      <button onclick="closeModal()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">Fechar</button>
-    </div>
-  </div>
+    <!-- Firebase and App Logic -->
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  <!-- Player Modal -->
-  <div id="player-modal" class="modal" style="display: none; background-color: black; align-items: center; justify-content: center;">
-    <div class="video-container" style="width: 100%; height: 100%; max-width: none; max-height: none;">
-      <a href="#" onclick="closePlayerModal()" class="back-button">Voltar</a>
-      <video id="modalVideoPlayer" controls autoplay style="width: 100%; height: 100%;"></video>
-    </div>
-    <p id="modalErrorMessage" class="error-message" style="display:none; position: absolute; bottom: 20px;"></p>
-  </div>
+        // Firebase Config and Initialization
+        const firebaseConfig = {
+            apiKey: "AIzaSyCY9sq12w7H9X3hm9FLa_KkazKONpm1nJE",
+            authDomain: "fasthub-9a206.firebaseapp.com",
+            databaseURL: "https://fasthub-9a206-default-rtdb.firebaseio.com",
+            projectId: "fasthub-9a206",
+            storageBucket: "fasthub-9a206.appspot.com",
+            messagingSenderId: "685686875831",
+            appId: "1:685686875831:web:a31c42df4b9f6bd7b88f32"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
 
-  <!-- Expired Account Modal -->
-  <div id="expired-account-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); color: white; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 2000;">
-    <h2 class="text-3xl font-bold mb-4">Sua conta está expirada!</h2>
-    <p class="text-xl">Renove sua conta para continuar usando nossos serviços.</p>
-  </div>
-
-  <!-- Scripts -->
-  <script type="module">
-    import { auth, onAuthStateChanged, signOut, db, ref, get, set, onValue } from '/js/firebase-init.js';
-
-    const protectedPages = ['index.html', 'player-page.html', 'Player-TV.html', 'profile.html'];
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-
-    if (protectedPages.includes(currentPage)) {
-      onAuthStateChanged(auth, async (user) => {
-        console.log("onAuthStateChanged triggered. User:", user ? user.uid : "null");
-        if (!user) {
-          console.log("No user found, redirecting to login.html");
-          window.location.href = 'login.html';
-        } else {
-          console.log("User authenticated. Checking status...");
-          const userRef = ref(db, `users/${user.uid}`);
-          const snapshot = await get(userRef);
-
-          if (snapshot.exists()) {
-            const userData = snapshot.val();
-            console.log("User data from DB:", userData);
-            const isExpired = userData.expirationDate && new Date(userData.expirationDate) < new Date();
-
-            if (userData.status === 'blocked') {
-              console.log("Account blocked. Signing out and redirecting.");
-              alert('Sua conta está bloqueada. Entre em contato com o suporte.');
-              signOut(auth);
-              window.location.href = 'login.html';
-            } else if (isExpired) {
-              console.log("Account expired. Showing modal.");
-              document.getElementById('expired-account-modal').style.display = 'flex';
-              document.body.style.visibility = 'visible'; // Make body visible to show the modal
-            } else {
-              console.log("Account active. Making body visible.");
-              document.body.style.visibility = 'visible';
+        // Auth Logic (from auth.js)
+        function updateProfileSection(user) {
+            if (!user) {
+                console.warn('Nenhum usuário fornecido para updateProfileSection');
+                return;
             }
-          } else {
-            console.log("User exists in Auth but not in DB. Signing out and redirecting.");
-            // User exists in Auth but not in Realtime Database, might be an old or invalid account
-            alert('Sua conta não foi encontrada ou está inválida. Entre em contato com o suporte.');
-            signOut(auth);
-            window.location.href = 'login.html';
-          }
+
+            const profileIconDisplay = document.getElementById('profile-icon-display');
+            const userNameDisplay = document.getElementById('user-name');
+            
+            if (!profileIconDisplay || !userNameDisplay) {
+                console.warn('Elementos profile-icon-display ou user-name não encontrados');
+                return;
+            }
+
+            const userRef = ref(db, 'users/' + user.uid);
+            onValue(userRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    profileIconDisplay.src = `./images/PROFILE_ICONS/${userData.profileIcon || 'Default.png'}`;
+                    userNameDisplay.textContent = (userData.name || user.email).split('@')[0];
+
+                    const adminLink = document.getElementById('admin-link');
+                    if (userData.role === 'admin' && !adminLink) {
+                        const navLinks = document.querySelector('.nav-links');
+                        if (navLinks) {
+                            const newAdminLink = document.createElement('a');
+                            newAdminLink.id = 'admin-link';
+                            newAdminLink.href = 'admin.html';
+                            newAdminLink.textContent = 'Admin';
+                            navLinks.appendChild(newAdminLink);
+                        }
+                    } else if (userData.role !== 'admin' && adminLink) {
+                        adminLink.remove();
+                    }
+                } else {
+                    const userName = user.email.split('@')[0];
+                    const role = userName === 'admin' ? 'admin' : 'user';
+                    const expiration = new Date();
+                    expiration.setDate(expiration.getDate() + 30);
+                    set(userRef, { 
+                        profileIcon: 'Default.png', 
+                        name: userName, 
+                        role,
+                        status: 'ativo',
+                        expirationDate: expiration.toISOString()
+                    }).then(() => {
+                        console.log('Novo documento de usuário criado com valores padrão.');
+                    });
+                }
+            }, (error) => {
+                console.error('Erro ao obter documento do usuário:', error);
+                profileIconDisplay.src = './images/PROFILE_ICONS/Default.png';
+                userNameDisplay.textContent = user.email.split('@')[0];
+            });
         }
-      });
-    } else {
-      console.log("Page not protected, making body visible.");
-      document.body.style.visibility = 'visible';
-    }
 
-    // Função para togglar o menu hambúrguer
-    window.toggleMenu = function() {
-      const navLinks = document.querySelector('#nav-links');
-      if (navLinks) {
-        navLinks.classList.toggle('nav-active');
-      }
-    };
+        function handleProtectedPage() {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    try {
+                        const userRef = ref(db, 'users/' + user.uid);
+                        const snapshot = await get(userRef);
+                        if (snapshot.exists()) {
+                            const userData = snapshot.val();
+                            if (window.location.pathname.endsWith('admin.html') && userData.role !== 'admin') {
+                                console.log('Usuário não é admin, redirecionando para index.html');
+                                window.location.href = 'index.html';
+                            } else {
+                                await updateProfileSection(user);
+                                const expirationDate = userData.expirationDate ? new Date(userData.expirationDate) : null;
+                                if (expirationDate && expirationDate < new Date() && userData.accountType !== 'lifetime') {
+                                    document.getElementById('expired-message').classList.remove('hidden');
+                                    document.querySelectorAll('.container, nav').forEach(el => el.style.display = 'none');
+                                    await signOut(auth);
+                                }
+                            }
+                        } else {
+                            if (window.location.pathname.endsWith('admin.html')) {
+                                console.log('Dados do usuário não encontrados, redirecionando para index.html');
+                                window.location.href = 'index.html';
+                            } else {
+                                await updateProfileSection(user);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Erro ao verificar dados do usuário:', error);
+                        window.location.href = 'login.html';
+                    }
+                } else {
+                    console.log('Nenhum usuário autenticado, redirecionando para login.html');
+                    window.location.href = 'login.html';
+                }
+            });
 
-    // Fechar o menu ao clicar em um link
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('#nav-links a').forEach(link => {
-        link.addEventListener('click', () => {
-          const navLinks = document.querySelector('#nav-links');
-          if (navLinks && navLinks.classList.contains('nav-active')) {
-            navLinks.classList.remove('nav-active');
-          }
+            const logoutButton = document.getElementById('logout-button');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', async () => {
+                    try {
+                        await signOut(auth);
+                        localStorage.clear();
+                        console.log('Usuário desconectado.');
+                        window.location.href = 'login.html';
+                    } catch (error) {
+                        console.error('Erro ao desconectar:', error);
+                        alert('Erro ao sair. Tente novamente.');
+                    }
+                });
+            }
+        }
+
+        window.toggleDropdown = function() {
+            const dropdown = document.querySelector('.profile-dropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('hidden');
+            }
+        }
+
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            if (dropdown && !dropdown.contains(event.target) && !event.target.closest('#profile-button')) {
+                dropdown.classList.add('hidden');
+            }
         });
-      });
-    });
-  </script>
-  <script src="/js/auth.js" type="module"></script>
-  <script src="/js/player.js" type="module"></script>
+
+        // Player Logic (from player.js)
+        let allChannels = { filmes: {}, series: {}, tv: {} };
+        const ITEMS_PER_PAGE = 20;
+        let currentTab = 'filmes';
+        let currentSubcat = 'all';
+        const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50 MB
+        let lastNavigationTime = 0;
+        const NAVIGATION_DEBOUNCE_MS = 1000;
+        const CACHE_VALIDITY_MS = 24 * 3600000; // 24 horas
+        const POSTER_CACHE = new Map();
+
+        function normalizeTitle(title) {
+            return title ? title.trim().replace(/\b\w/g, c => c.toUpperCase()) : 'Sem Título';
+        }
+
+        function debounceNavigation(url) {
+            const now = Date.now();
+            if (now - lastNavigationTime < NAVIGATION_DEBOUNCE_MS) {
+                console.warn('Navegação bloqueada por debounce:', url);
+                return false;
+            }
+            lastNavigationTime = now;
+            console.log('Navegando para:', url);
+            return true;
+        }
+
+        async function fetchSeriesPoster(seriesName) {
+            if (POSTER_CACHE.has(seriesName)) {
+                return POSTER_CACHE.get(seriesName);
+            }
+            const cleanName = seriesName.trim();
+            let posterUrl = 'https://via.placeholder.com/200x300?text=Série';
+            try {
+                const response = await fetch(
+                    `https://kitsu.io/api/edge/anime?filter[text]=${encodeURIComponent(cleanName)}`,
+                    { headers: { 'Accept': 'application/vnd.api+json' } }
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.data && data.data.length > 0) {
+                        const posterPath = data.data[0].attributes.posterImage?.large;
+                        if (posterPath) {
+                            posterUrl = posterPath;
+                            POSTER_CACHE.set(seriesName, posterUrl);
+                            console.log(`Capa encontrada na Kitsu para "${seriesName}": ${posterUrl}`);
+                            return posterUrl;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`Erro ao buscar capa na Kitsu para "${seriesName}":`, error);
+            }
+            POSTER_CACHE.set(seriesName, posterUrl);
+            console.warn(`Nenhuma capa encontrada para "${seriesName}", usando placeholder`);
+            return posterUrl;
+        }
+
+        async function loadM3U() {
+            const cacheKey = `m3u_data`;
+            const startTime = performance.now();
+            const cached = localStorage.getItem(cacheKey);
+
+            if (cached) {
+                try {
+                    const { timestamp, data } = JSON.parse(cached);
+                    if (Date.now() - timestamp < CACHE_VALIDITY_MS && data && (
+                        (data.filmes && Object.keys(data.filmes).length > 0) ||
+                        (data.series && Object.keys(data.series).length > 0) ||
+                        (data.tv && Object.keys(data.tv).length > 0)
+                    )) {
+                        allChannels = data;
+                        console.log('Carregado do cache:', Object.keys(allChannels.filmes).length, 'subcategorias de filmes,', Object.keys(allChannels.series).length, 'subcategorias de séries,', Object.keys(allChannels.tv).length, 'subcategorias de canais');
+                        console.log(`Cache carregado em ${performance.now() - startTime} ms`);
+                        displayChannels();
+                        showLoadingIndicator(false);
+                        return;
+                    } else {
+                        console.log('Cache expirado ou inválido, recarregando...');
+                    }
+                } catch (e) {
+                    console.error('Erro ao ler cache do localStorage:', e);
+                }
+            } else {
+                console.log('Nenhum cache encontrado, carregando M3U...');
+            }
+
+            showLoadingIndicator(true);
+
+            // Usar Google Drive URL (do histórico anterior)
+            const googleDriveViewUrl = 'https://drive.google.com/file/d/1XxLcwjd8duGFfbt_VYkLichOurDzinqc/view?usp=sharing';
+            const fileId = googleDriveViewUrl.match(/\/d\/(.+?)\/view/)[1];
+            const directDownloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+
+            let content = null;
+            let loadedFrom = '';
+
+            try {
+                const fetchStart = performance.now();
+                const response = await fetch(directDownloadUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0',
+                        'Accept': 'text/plain,*/*'
+                    }
+                });
+                if (response.ok) {
+                    content = await response.text();
+                    loadedFrom = directDownloadUrl;
+                    console.log(`Carregado de Google Drive URL em ${performance.now() - fetchStart} ms`);
+                } else {
+                    console.error(`Falha ao carregar de ${directDownloadUrl}: Status ${response.status}`);
+                }
+            } catch (error) {
+                console.error(`Erro ao carregar M3U do Google Drive:`, error.message);
+                alert(`Erro ao carregar a lista M3U do Google Drive`);
+                showLoadingIndicator(false);
+                return;
+            }
+
+            if (content) {
+                parseM3UInWorker(content).then(parsedData => {
+                    allChannels = parsedData;
+                    console.log('Parse concluído via Worker:', Object.keys(allChannels.filmes).length, 'subcategorias de filmes,', Object.keys(allChannels.series).length, 'subcategorias de séries,', Object.keys(allChannels.tv).length, 'subcategorias de canais');
+                    try {
+                        saveToCacheIfPossible();
+                    } catch (e) {
+                        console.warn('Falha ao salvar cache, continuando com exibição:', e);
+                    }
+                    displayChannels();
+                    showLoadingIndicator(false);
+                    console.log(`Carregamento total levou ${performance.now() - startTime} ms`);
+                }).catch(error => {
+                    console.error('Erro no Worker:', error);
+                    alert('Erro ao processar a lista M3U.');
+                    showLoadingIndicator(false);
+                });
+            } else {
+                showLoadingIndicator(false);
+                alert('Nenhum conteúdo M3U carregado.');
+            }
+        }
+
+        function parseM3UInWorker(content) {
+            return new Promise((resolve, reject) => {
+                const workerCode = `
+                    self.onmessage = function(e) {
+                        try {
+                            var content = e.data;
+                            var lines = content.split("\\n");
+                            var allChannels = { filmes: {}, series: {}, tv: {} };
+                            var currentChannel = null;
+
+                            function normalizeTitle(title) {
+                                return title ? title.trim().replace(/\\b\\w/g, function(c) { return c.toUpperCase(); }) : "Sem Título";
+                            }
+
+                            function parseGroup(group) {
+                                var clean = group.replace(/[◆]/g, "").trim();
+                                var parts = clean.split("|").map(function(part) { return part.trim(); });
+                                var main = parts[0].toLowerCase();
+                                var sub = parts.length > 1 ? parts[1] : "Outros";
+                                return { main: main, sub: sub };
+                            }
+
+                            function categorizeChannel(channel) {
+                                try {
+                                    var title = channel.title.toLowerCase();
+                                    var groupInfo = parseGroup(channel.group);
+                                    var main = groupInfo.main;
+                                    var sub = groupInfo.sub;
+                                    var hasSeriesPattern = /(s\\d{1,2}e\\d{1,2})|(temporada\\s*\\d+)|(episodio\\s*\\d+)/i.test(title);
+                                    var looksLikeLinearChannel = /(24h|canal|mix|ao vivo|live|4k|fhd|hd|sd|channel|tv|plus)/i.test(title);
+
+                                    if (main.includes("canais") || main.includes("canal") || looksLikeLinearChannel) {
+                                        if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
+                                        allChannels.tv[sub].push({ 
+                                            title: normalizeTitle(channel.title), 
+                                            url: channel.url, 
+                                            logo: channel.logo 
+                                        });
+                                        return;
+                                    }
+
+                                    if (main.includes("series") || main.includes("série")) {
+                                        if (hasSeriesPattern && !looksLikeLinearChannel) {
+                                            var seriesName, season, episodeTitle;
+                                            var match = title.match(/^(.*?)\\s*[Ss](\\d{1,2})\\s*[Ee](\\d{1,2})/);
+                                            if (match) {
+                                                seriesName = normalizeTitle(match[1]);
+                                                season = match[2];
+                                                episodeTitle = "Episodio " + match[3];
+                                            } else {
+                                                seriesName = normalizeTitle(title.replace(/(temporada|episodio).*/i, "").trim());
+                                                season = "1";
+                                                episodeTitle = normalizeTitle(title);
+                                            }
+                                            var seriesKey = seriesName.toLowerCase();
+                                            if (!allChannels.series[sub]) allChannels.series[sub] = {};
+                                            var seriesSub = allChannels.series[sub];
+                                            if (!seriesSub[seriesKey]) {
+                                                seriesSub[seriesKey] = { displayName: seriesName, seasons: {}, logo: channel.logo };
+                                            }
+                                            if (!seriesSub[seriesKey].seasons[season]) {
+                                                seriesSub[seriesKey].seasons[season] = [];
+                                            }
+                                            seriesSub[seriesKey].seasons[season].push({ title: episodeTitle, url: channel.url, logo: channel.logo });
+                                            return;
+                                        } else {
+                                            if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
+                                            allChannels.tv[sub].push({ 
+                                                title: normalizeTitle(channel.title), 
+                                                url: channel.url, 
+                                                logo: channel.logo 
+                                            });
+                                            return;
+                                        }
+                                    }
+
+                                    if (main.includes("filmes") || main.includes("filme")) {
+                                        if (!looksLikeLinearChannel && title.length > 5) {
+                                            if (!allChannels.filmes[sub]) allChannels.filmes[sub] = [];
+                                            allChannels.filmes[sub].push({ 
+                                                title: normalizeTitle(channel.title), 
+                                                url: channel.url, 
+                                                logo: channel.logo 
+                                            });
+                                            return;
+                                        } else {
+                                            if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
+                                            allChannels.tv[sub].push({ 
+                                                title: normalizeTitle(channel.title), 
+                                                url: channel.url, 
+                                                logo: channel.logo 
+                                            });
+                                            return;
+                                        }
+                                    }
+
+                                    if (!allChannels.tv["Outros"]) allChannels.tv["Outros"] = [];
+                                    allChannels.tv["Outros"].push({ 
+                                        title: normalizeTitle(channel.title), 
+                                        url: channel.url, 
+                                        logo: channel.logo 
+                                    });
+                                } catch (error) {
+                                    console.error("Erro ao categorizar canal:", channel.title, error);
+                                    if (!allChannels.tv["Outros"]) allChannels.tv["Outros"] = [];
+                                    allChannels.tv["Outros"].push({ 
+                                        title: normalizeTitle(channel.title), 
+                                        url: channel.url, 
+                                        logo: channel.logo 
+                                    });
+                                }
+                            }
+
+                            for (var i = 0; i < lines.length; i++) {
+                                var line = lines[i].trim();
+                                try {
+                                    if (line.startsWith("#EXTINF:")) {
+                                        var titleMatch = line.match(/,(.+)/) || line.match(/tvg-name="([^"]+)"/i);
+                                        var groupMatch = line.match(/group-title="([^"]+)"/i);
+                                        var logoMatch = line.match(/tvg-logo="([^"]+)"/i);
+                                        var title = titleMatch ? titleMatch[1].trim() : "Canal Desconhecido";
+                                        currentChannel = {
+                                            title: title,
+                                            url: "",
+                                            group: groupMatch ? groupMatch[1] : "",
+                                            logo: logoMatch ? logoMatch[1] : ""
+                                        };
+                                    } else if (line && !line.startsWith("#") && currentChannel) {
+                                        currentChannel.url = line;
+                                        categorizeChannel(currentChannel);
+                                        currentChannel = null;
+                                    }
+                                } catch (error) {
+                                    console.error("Erro ao processar linha", i, ":", line, error);
+                                    currentChannel = null;
+                                }
+                            }
+
+                            self.postMessage(allChannels);
+                        } catch (error) {
+                            self.postMessage({ error: "Erro geral no parsing: " + error.message });
+                        }
+                    };
+                `;
+
+                const blob = new Blob([workerCode], { type: 'application/javascript; charset=utf-8' });
+                const worker = new Worker(URL.createObjectURL(blob));
+
+                worker.onmessage = (e) => {
+                    if (e.data.error) {
+                        reject(new Error(e.data.error));
+                    } else {
+                        resolve(e.data);
+                    }
+                    worker.terminate();
+                };
+
+                worker.onerror = (error) => {
+                    reject(error);
+                    worker.terminate();
+                };
+
+                worker.postMessage(content);
+            });
+        }
+
+        function saveToCacheIfPossible() {
+            let cacheData;
+            try {
+                cacheData = JSON.stringify({ timestamp: Date.now(), data: allChannels });
+                if (cacheData.length < MAX_CACHE_SIZE) {
+                    localStorage.setItem('m3u_data', cacheData);
+                    console.log('Cache salvo com sucesso no localStorage');
+                } else {
+                    console.warn('Cache excedeu o limite do localStorage, usando IndexedDB.');
+                    saveToIndexedDB(cacheData);
+                }
+            } catch (e) {
+                console.error('Erro ao salvar no localStorage:', e);
+                if (cacheData) {
+                    saveToIndexedDB(cacheData);
+                } else {
+                    console.warn('cacheData não definido, ignorando salvamento no IndexedDB');
+                }
+            }
+        }
+
+        async function saveToIndexedDB(cacheData) {
+            try {
+                const dbRequest = indexedDB.open('m3uDatabase', 1);
+
+                dbRequest.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('m3uStore')) {
+                        db.createObjectStore('m3uStore', { keyPath: 'key' });
+                    }
+                };
+
+                const db = await new Promise((resolve, reject) => {
+                    dbRequest.onsuccess = () => resolve(dbRequest.result);
+                    dbRequest.onerror = () => reject(dbRequest.error);
+                });
+
+                const transaction = db.transaction(['m3uStore'], 'readwrite');
+                const store = transaction.objectStore('m3uStore');
+                await new Promise((resolve, reject) => {
+                    const request = store.put({ key: 'm3u_data', data: cacheData });
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+                console.log('Cache salvo no IndexedDB');
+            } catch (error) {
+                console.error('Erro ao salvar no IndexedDB:', error);
+            }
+        }
+
+        function showLoadingIndicator(show) {
+            const loadingEl = document.getElementById('loading');
+            if (loadingEl) {
+                loadingEl.style.display = show ? 'block' : 'none';
+            } else {
+                console.warn('Elemento de loading (#loading) não encontrado no DOM');
+            }
+        }
+
+        function getSubcatsForTab(tab) {
+            let data;
+            if (tab === 'filmes') data = allChannels.filmes;
+            else if (tab === 'series') data = allChannels.series;
+            else if (tab === 'tv') data = allChannels.tv;
+            else return [];
+            return Object.keys(data).sort();
+        }
+
+        function getFilteredItems(tab, filter = '') {
+            const lowerFilter = filter.toLowerCase();
+            let items = [];
+            let data;
+
+            if (tab === 'filmes') {
+                data = allChannels.filmes;
+                if (currentSubcat === 'all') {
+                    for (let sub in data) {
+                        if (Array.isArray(data[sub])) {
+                            items = items.concat(data[sub]);
+                        }
+                    }
+                } else if (data[currentSubcat] && Array.isArray(data[currentSubcat])) {
+                    items = data[currentSubcat];
+                }
+                return items.filter(item => item.title && item.title.toLowerCase().includes(lowerFilter));
+            } else if (tab === 'series') {
+                data = allChannels.series;
+                let allSeriesObj = {};
+                if (currentSubcat === 'all') {
+                    for (let sub in data) {
+                        if (data[sub] && typeof data[sub] === 'object') {
+                            for (let key in data[sub]) {
+                                if (!allSeriesObj[key]) {
+                                    allSeriesObj[key] = data[sub][key];
+                                } else {
+                                    console.log('Série duplicada encontrada:', key, 'em subcategorias diferentes. Mesclando temporadas.');
+                                    for (let s in data[sub][key].seasons) {
+                                        if (!allSeriesObj[key].seasons[s]) {
+                                            allSeriesObj[key].seasons[s] = data[sub][key].seasons[s];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (data[currentSubcat] && typeof data[currentSubcat] === 'object') {
+                    for (let key in data[currentSubcat]) {
+                        allSeriesObj[key] = data[currentSubcat][key];
+                    }
+                }
+                return Object.values(allSeriesObj).filter(item => item.displayName && item.displayName.toLowerCase().includes(lowerFilter));
+            } else if (tab === 'tv') {
+                data = allChannels.tv;
+                if (currentSubcat === 'all') {
+                    for (let sub in data) {
+                        if (Array.isArray(data[sub])) {
+                            items = items.concat(data[sub]);
+                        }
+                    }
+                } else if (data[currentSubcat] && Array.isArray(data[currentSubcat])) {
+                    items = data[currentSubcat];
+                }
+                return items.filter(item => item.title && item.title.toLowerCase().includes(lowerFilter));
+            }
+            return [];
+        }
+
+        function displayChannels(filter = '') {
+            const activeId = currentTab;
+            const listContainer = document.getElementById(activeId);
+            const paginationContainer = document.getElementById(`${activeId}-pagination`);
+
+            if (!listContainer || !paginationContainer) {
+                console.error('Container ou paginação não encontrado:', activeId);
+                if (listContainer) {
+                    listContainer.innerHTML = '<p class="text-red-500 text-center">Erro: Container de paginação não encontrado.</p>';
+                }
+                return;
+            }
+
+            const subcatSelector = document.getElementById('category-filter');
+            if (!subcatSelector) {
+                console.error('Seletor de categoria (#category-filter) não encontrado no DOM');
+                listContainer.innerHTML = '<p class="text-red-500 text-center">Erro: Seletor de categoria não encontrado.</p>';
+                return;
+            }
+
+            const previouslySelected = subcatSelector.value;
+            subcatSelector.innerHTML = '<option value="all">Todas as Categorias</option>';
+            const subcats = getSubcatsForTab(activeId);
+            subcats.forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub;
+                option.textContent = normalizeTitle(sub);
+                subcatSelector.appendChild(option);
+            });
+
+            if (subcats.includes(previouslySelected)) {
+                subcatSelector.value = previouslySelected;
+                currentSubcat = previouslySelected;
+            } else {
+                subcatSelector.value = 'all';
+                currentSubcat = 'all';
+            }
+
+            const filteredItems = getFilteredItems(activeId, filter);
+
+            if (filteredItems.length === 0) {
+                console.warn('Nenhum item encontrado para a aba:', activeId, 'subcat:', currentSubcat);
+                listContainer.innerHTML = '<p class="text-gray-300 text-center">Nenhum item encontrado.</p>';
+            } else {
+                if (activeId === 'filmes') {
+                    displayPaginatedList(activeId, filteredItems, createMovieCard);
+                } else if (activeId === 'series') {
+                    displayPaginatedList(activeId, filteredItems, createSeriesCard);
+                } else if (activeId === 'tv') {
+                    displayPaginatedList(activeId, filteredItems, createTVCard);
+                }
+            }
+        }
+
+        function createMovieCard(item) {
+            const div = document.createElement('div');
+            div.className = 'card bg-gray-800 rounded-md overflow-hidden';
+            div.innerHTML = `
+                <img src="${item.logo || 'https://via.placeholder.com/200x300?text=Filme'}" alt="${item.title || 'Sem Título'}" class="w-full h-auto object-cover">
+                <p class="p-2 text-center text-sm">${item.title || 'Sem Título'}</p>
+            `;
+            div.addEventListener('click', (e) => {
+                e.preventDefault();
+                const url = 'player-page.html?videoUrl=' + encodeURIComponent(item.url);
+                if (debounceNavigation(url)) {
+                    window.location.href = url;
+                }
+            });
+            return div;
+        }
+
+        async function createSeriesCard(item) {
+            const div = document.createElement('div');
+            div.className = 'card bg-gray-800 rounded-md overflow-hidden';
+            let posterUrl = item.logo || await fetchSeriesPoster(item.displayName);
+            div.innerHTML = `
+                <img src="${posterUrl}" alt="${item.displayName || 'Sem Título'}" class="w-full h-auto object-cover">
+                <p class="p-2 text-center text-sm">${item.displayName || 'Sem Título'}</p>
+            `;
+            div.addEventListener('click', (e) => {
+                e.preventDefault();
+                openSeriesModal(item);
+            });
+            return div;
+        }
+
+        function createTVCard(item) {
+            const div = document.createElement('div');
+            div.className = 'card bg-gray-800 rounded-md overflow-hidden';
+            div.innerHTML = `
+                <img src="${item.logo || 'https://via.placeholder.com/200x300?text=TV'}" alt="${item.title || 'Sem Título'}" class="w-full h-auto object-cover">
+                <p class="p-2 text-center text-sm">${item.title || 'Sem Título'}</p>
+            `;
+            div.addEventListener('click', (e) => {
+                e.preventDefault();
+                const url = 'player-page.html?videoUrl=' + encodeURIComponent(item.url);
+                if (debounceNavigation(url)) {
+                    window.location.href = url;
+                }
+            });
+            return div;
+        }
+
+        function displayPaginatedList(categoryId, items, createItemElement) {
+            const listContainer = document.getElementById(categoryId);
+            const paginationContainer = document.getElementById(`${categoryId}-pagination`);
+            if (!listContainer || !paginationContainer) {
+                console.error('Container ou paginação não encontrado:', categoryId);
+                return;
+            }
+
+            let currentPage = parseInt(localStorage.getItem(`${categoryId}_page`) || '1');
+            const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+
+            if (currentPage > totalPages) {
+                currentPage = 1;
+            }
+
+            async function renderPage(page) {
+                currentPage = page;
+                localStorage.setItem(`${categoryId}_page`, currentPage);
+                listContainer.innerHTML = '';
+                const start = (page - 1) * ITEMS_PER_PAGE;
+                const end = start + ITEMS_PER_PAGE;
+                for (const item of items.slice(start, end)) {
+                    try {
+                        listContainer.appendChild(await createItemElement(item));
+                    } catch (error) {
+                        console.error('Erro ao criar card para item:', item, error);
+                    }
+                }
+                renderPagination();
+            }
+
+            function renderPagination() {
+                paginationContainer.innerHTML = '';
+                if (totalPages <= 1) return;
+
+                const prevButton = document.createElement('button');
+                prevButton.textContent = 'Anterior';
+                prevButton.disabled = currentPage === 1;
+                prevButton.className = 'px-4 py-2 bg-gray-700 text-white rounded mr-2 disabled:opacity-50';
+                prevButton.addEventListener('click', () => renderPage(currentPage - 1));
+                paginationContainer.appendChild(prevButton);
+
+                const nextButton = document.createElement('button');
+                nextButton.textContent = 'Próxima';
+                nextButton.disabled = currentPage === totalPages;
+                nextButton.className = 'px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50';
+                nextButton.addEventListener('click', () => renderPage(currentPage + 1));
+                paginationContainer.appendChild(nextButton);
+            }
+
+            renderPage(currentPage);
+        }
+
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            currentSubcat = 'all';
+            document.querySelectorAll('.nav-links a, .nav-links div').forEach(a => a.classList.remove('active'));
+            const tabElement = document.getElementById(`${tab}-tab`);
+            if (tabElement) tabElement.classList.add('active');
+            document.querySelectorAll('.category').forEach(c => c.classList.remove('active'));
+            const categoryElement = document.getElementById(`${tab}-category`);
+            if (categoryElement) categoryElement.classList.add('active');
+            displayChannels(document.getElementById('search')?.value || '');
+        }
+
+        window.openSeriesModal = function(series) {
+            const modal = document.getElementById('series-modal');
+            if (!modal) {
+                console.error('Modal de séries não encontrado');
+                return;
+            }
+            const modalTitle = document.getElementById('modal-title');
+            const seasonSelectorContainer = document.getElementById('season-selector');
+            const episodesContainer = document.getElementById('modal-episodes');
+            
+            if (modalTitle) modalTitle.textContent = series.displayName || 'Sem Título';
+            if (seasonSelectorContainer) seasonSelectorContainer.innerHTML = '';
+            if (episodesContainer) episodesContainer.innerHTML = '';
+
+            if (!series.seasons || Object.keys(series.seasons).length === 0) {
+                if (episodesContainer) {
+                    episodesContainer.innerHTML = '<p class="text-red-500">Nenhum episódio encontrado para esta série.</p>';
+                }
+            } else {
+                const sortedSeasons = Object.keys(series.seasons).sort((a, b) => a - b);
+
+                const select = document.createElement('select');
+                select.className = 'w-full bg-gray-700 text-white p-2 rounded-md';
+
+                sortedSeasons.forEach(seasonNumber => {
+                    const option = document.createElement('option');
+                    option.value = seasonNumber;
+                    option.textContent = `Temporada ${seasonNumber}`;
+                    select.appendChild(option);
+                });
+
+                select.addEventListener('change', () => {
+                    const selectedSeason = select.value;
+                    if (episodesContainer) episodesContainer.innerHTML = '';
+                    const episodesList = document.createElement('ul');
+                    episodesList.className = 'space-y-2';
+                    if (series.seasons[selectedSeason]) {
+                        series.seasons[selectedSeason].forEach(episode => {
+                            const li = document.createElement('li');
+                            li.className = 'p-2 hover:bg-gray-700 rounded cursor-pointer';
+                            li.textContent = episode.title || 'Sem Título';
+                            li.addEventListener('click', () => {
+                                sessionStorage.setItem('currentSeries', JSON.stringify(series));
+                                sessionStorage.setItem('currentSeason', selectedSeason);
+                                const url = 'player-page.html?videoUrl=' + encodeURIComponent(episode.url);
+                                if (debounceNavigation(url)) {
+                                    window.location.href = url;
+                                }
+                            });
+                            episodesList.appendChild(li);
+                        });
+                    }
+                    if (episodesContainer) episodesContainer.appendChild(episodesList);
+                });
+
+                if (seasonSelectorContainer) seasonSelectorContainer.appendChild(select);
+                select.dispatchEvent(new Event('change'));
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('show');
+        }
+
+        window.closeModal = function() {
+            const modal = document.getElementById('series-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            console.log('Página atual:', currentPage);
+
+            if (currentPage === 'login.html') {
+                console.log('Gerenciando página de login');
+                // Implementar lógica de login se necessário
+            } else {
+                console.log('Gerenciando página protegida');
+                handleProtectedPage();
+            }
+
+            const searchInput = document.getElementById('search');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    displayChannels(this.value);
+                });
+            } else {
+                console.warn('Input de busca (#search) não encontrado no DOM');
+            }
+
+            const categoryFilter = document.getElementById('category-filter');
+            if (categoryFilter) {
+                categoryFilter.addEventListener('change', (e) => {
+                    currentSubcat = e.target.value;
+                    displayChannels(document.getElementById('search')?.value || '');
+                });
+            } else {
+                console.error('Seletor de categoria (#category-filter) não encontrado no DOM');
+            }
+
+            document.querySelectorAll('.tab-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tab = e.target.id.replace('-tab', '');
+                    window.switchTab(tab);
+                });
+            });
+
+            loadM3U();
+        });
+    </script>
 </body>
 </html>
